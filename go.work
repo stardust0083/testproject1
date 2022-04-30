@@ -1,0 +1,13 @@
+go 1.18
+
+use (
+	./getArea
+	./mainproject
+	./getImageCode
+	./getSmsCode
+	./postRet
+	./getUserInfo
+	./postLogin
+	./postAvatar
+	./putUserName
+)
