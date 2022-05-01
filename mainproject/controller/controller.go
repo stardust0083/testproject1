@@ -207,6 +207,7 @@ func PostRet(ctx *gin.Context) {
 	if rsp.Errno == utils.RECODE_OK {
 		s := sessions.Default(ctx)
 		s.Set("userName", regUser.Mobile)
+		s.Set("mobile", regUser.Mobile)
 		s.Save()
 	}
 	ctx.JSON(200, resp)
@@ -252,6 +253,7 @@ func DeleteSession(ctx *gin.Context) {
 
 	s := sessions.Default(ctx)
 	s.Delete("userName")
+	s.Delete("mobile")
 	err := s.Save()
 	if err != nil {
 		resp["errno"] = utils.RECODE_SESSIONERR
@@ -292,7 +294,7 @@ func PostLogin(ctx *gin.Context) {
 	if rsp.Errno == utils.RECODE_OK {
 		s := sessions.Default(ctx)
 		s.Set("userName", rsp.Name)
-		s.Set("mobile",rsp.Mobile)
+		s.Set("mobile", rsp.Mobile)
 		err = s.Save()
 		if err != nil {
 			resp["errno"] = utils.RECODE_SESSIONERR
@@ -351,21 +353,35 @@ func PostAvatar(ctx *gin.Context) {
 	ctx.JSON(200, rsp)
 }
 
+type PutName struct {
+	Name string `json:"name"`
+}
+
 func PutUserName(ctx *gin.Context) {
 
 	resp := make(map[string]interface{})
 	resp["errno"] = utils.RECODE_OK
 	resp["errmsg"] = utils.RecodeText(utils.RECODE_OK)
-
-	newName := ctx.Query("name")
+	var tmp PutName
+	err := ctx.Bind(&tmp)
+	if err != nil {
+		resp["errno"] = utils.RECODE_REQERR
+		resp["errmsg"] = utils.RecodeText(utils.RECODE_REQERR)
+		ctx.JSON(200, resp)
+		return
+	}
+	newName := tmp.Name
 	s := sessions.Default(ctx)
-	usrid := s.Get("userName")
+	usrid := s.Get("mobile")
+	fmt.Println(usrid)
 	if usrid == nil {
 		resp["errno"] = utils.RECODE_SESSIONERR
 		resp["errmsg"] = utils.RecodeText(utils.RECODE_SESSIONERR)
 		ctx.JSON(200, resp)
 		return
 	}
+	resp["mobile"] = usrid
+	resp["name"] = newName
 
 	reg := consul.NewRegistry()
 	ser := grpc.NewTransport()
@@ -374,14 +390,16 @@ func PutUserName(ctx *gin.Context) {
 		micro.Transport(ser),
 	)
 	microService.Init()
-	client := PUTUSERNAMEPB.NewPutUserNameService("go.micro.srv.PutUserName", microService.Client())
+	client := PUTUSERNAMEPB.NewPutUserNameService("go.micro.src.PutUserName", microService.Client())
 	rsp, err := client.Call(context.Background(), &PUTUSERNAMEPB.CallRequest{Userid: usrid.(string), Username: newName})
 
 	if err != nil {
-		rsp.Errno = utils.RECODE_DATAERR
-		rsp.Errmsg = utils.RecodeText(utils.RECODE_DATAERR)
-		ctx.JSON(200, rsp)
+		resp["errno"] = utils.RECODE_DATAERR
+		resp["errmsg"] = utils.RecodeText(utils.RECODE_DATAERR)
+		ctx.JSON(200, resp)
 		return
 	}
+	s.Set("userName", rsp.Username)
+	s.Save()
 	ctx.JSON(200, rsp)
 }

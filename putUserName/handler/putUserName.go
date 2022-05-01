@@ -3,6 +3,8 @@ package handler
 import (
 	"context"
 	"io"
+	"mainproject/models"
+	"mainproject/utils"
 	"time"
 
 	log "go-micro.dev/v4/logger"
@@ -14,7 +16,51 @@ type PutUserName struct{}
 
 func (e *PutUserName) Call(ctx context.Context, req *pb.CallRequest, rsp *pb.CallResponse) error {
 	log.Infof("Received PutUserName.Call request: %v", req)
-	
+	rsp.Errno = utils.RECODE_OK
+	rsp.Errmsg = utils.RecodeText(utils.RECODE_OK)
+
+	redCli := models.InitRedis().Get()
+	defer redCli.Close()
+	_, err := redCli.Do("get", req.Userid+"_name")
+	if err != nil {
+		_, err = redCli.Do("del", req.Userid+"_name")
+		if err != nil {
+			log.Infof("Redis key deleted")
+		}
+
+		defer func() {
+			go func() {
+				time.Sleep(time.Second * 1)
+				redCli.Do("del", req.Userid+"_name")
+			}()
+		}()
+	}
+
+	db, err := models.InitDb()
+	defer db.Close()
+	var usrdb models.User
+	if err != nil {
+		log.Infof("DB ERROR")
+		rsp.Errno = utils.RECODE_DBERR
+		rsp.Errmsg = utils.RecodeText(utils.RECODE_DBERR)
+		return err
+	}
+	err = db.Where("mobile=?", req.Userid).First(&usrdb).Error
+	if err != nil {
+		log.Infof("Query Error" + req.Userid)
+		rsp.Errno = utils.RECODE_DBERR
+		rsp.Errmsg = utils.RecodeText(utils.RECODE_DBERR)
+		return err
+	}
+	usrdb.Name = req.Username
+	rsp.Username = req.Username
+	err = db.Save(&usrdb).Error
+	if err != nil {
+		log.Infof("Modify Error" + req.Userid)
+		rsp.Errno = utils.RECODE_DBERR
+		rsp.Errmsg = utils.RecodeText(utils.RECODE_DBERR)
+		return err
+	}
 	return nil
 }
 

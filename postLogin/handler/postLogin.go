@@ -45,6 +45,7 @@ func (e *PostLogin) Call(ctx context.Context, req *pb.CallRequest, rsp *pb.CallR
 		}
 		if m5Pwd == usr.Password_hash {
 			rsp.Name = usr.Name
+			rsp.Mobile = req.Mobile
 			rdCli.Do("setex", usr.Mobile+"_MD5Password", 5*60, usr.Password_hash)
 			rdCli.Do("setex", usr.Mobile+"_name", 5*60, usr.Name)
 		} else {
