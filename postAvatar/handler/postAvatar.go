@@ -30,6 +30,25 @@ func (e *PostAvatar) Call(ctx context.Context, req *pb.CallRequest, rsp *pb.Call
 	var path pb.ImgPath
 	path.AvatarUrl = fileId
 	rsp.Path = &path
+
+	db, err := models.InitDb()
+	defer db.Close()
+	var usrdb models.User
+	if err != nil {
+		log.Infof("DB ERROR")
+		rsp.Errno = utils.RECODE_DBERR
+		rsp.Errmsg = utils.RecodeText(utils.RECODE_DBERR)
+		return err
+	}
+	err = db.Where("name=?", req.Name).First(&usrdb).Error
+	if err != nil {
+		log.Infof("Query Error")
+		rsp.Errno = utils.RECODE_DBERR
+		rsp.Errmsg = utils.RecodeText(utils.RECODE_DBERR)
+		return err
+	}
+	usrdb.Avatar_url = fileId
+	db.Save(usrdb)
 	return nil
 }
 

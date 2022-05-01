@@ -54,6 +54,7 @@ func (e *PostLogin) Call(ctx context.Context, req *pb.CallRequest, rsp *pb.CallR
 	} else {
 		if m5Pwd == usrpwd {
 			rsp.Name, _ = redis.String(usrname, redis.ErrNil)
+			rsp.Mobile = req.Mobile
 		} else {
 			rsp.Errno = utils.RECODE_DATAERR
 			rsp.Errmsg = utils.RecodeText(utils.RECODE_DATAERR)

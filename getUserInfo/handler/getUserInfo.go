@@ -17,6 +17,7 @@ type GetUserInfo struct{}
 func (e *GetUserInfo) Call(ctx context.Context, req *pb.CallRequest, rsp *pb.CallResponse) error {
 	log.Infof("Received GetUserInfo.Call request: %v", req)
 	db, err := models.InitDb()
+	defer db.Close()
 	var usrdb models.User
 	if err != nil {
 		log.Infof("DB ERROR")

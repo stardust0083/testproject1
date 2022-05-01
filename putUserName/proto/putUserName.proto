@@ -12,7 +12,7 @@ service PutUserName {
 }
 
 message CallRequest {
-	string Sessionid=1;
+	string Usermobile=1;
 	string Username = 2 ;
 }
 

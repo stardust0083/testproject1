@@ -20,6 +20,7 @@ message CallResponse {
 	string errno = 1;
 	string errmsg = 2;
 	string name = 3;
+	string mobile=4;
 }
 
 message ClientStreamRequest {

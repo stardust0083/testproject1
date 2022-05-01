@@ -45,6 +45,7 @@ func (e *PutUserName) ServerStream(ctx context.Context, req *pb.ServerStreamRequ
 		}
 		time.Sleep(time.Millisecond * 250)
 	}
+
 	return nil
 }
 

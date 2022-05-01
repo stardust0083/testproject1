@@ -249,11 +249,12 @@ CREATE TABLE `user`  (
   `id_card` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   `avatar_url` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `mobile`(`mobile`) USING BTREE
+  UNIQUE INDEX `mobile`(`mobile`) USING BTREE,
+  UNIQUE INDEX `name`(`name`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
--- Records of user
+-- Records of user               
 -- ----------------------------
 INSERT INTO `user` VALUES (17, '18148789239', 'e10adc3949ba59abbe56e057f20f883e', '18148789239', '', '', 'http://192.168.0.65:3666/group1/default/20210510/15/42/4/8430311709_f16e717e14_k-e1553251390297.jpg');
 

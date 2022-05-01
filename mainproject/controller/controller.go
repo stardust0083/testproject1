@@ -11,6 +11,7 @@ import (
 	POSTAVATARPB "postAvatar/proto"
 	POSTLOGINPB "postLogin/proto"
 	POSTRETPB "postRet/proto"
+	PUTUSERNAMEPB "putUserName/proto"
 
 	"image"
 	"image/png"
@@ -38,7 +39,6 @@ func GetArea(ctx *gin.Context) {
 	client := GETAREAPB.NewGetAreaService("go.micro.srv.GetArea", microService.Client())
 	rsp, err := client.Call(context.Background(), &GETAREAPB.CallRequest{})
 	if err != nil {
-		print("fuck call", rsp)
 		rsp.Errno = utils.RECODE_DATAERR
 		rsp.Errmsg = utils.RecodeText(utils.RECODE_DATAERR)
 		// ctx.JSON(http.StatusNotAcceptable, gin.H{"status": http.StatusOK, "message": "fuck!"})
@@ -292,6 +292,7 @@ func PostLogin(ctx *gin.Context) {
 	if rsp.Errno == utils.RECODE_OK {
 		s := sessions.Default(ctx)
 		s.Set("userName", rsp.Name)
+		s.Set("mobile",rsp.Mobile)
 		err = s.Save()
 		if err != nil {
 			resp["errno"] = utils.RECODE_SESSIONERR
@@ -305,7 +306,7 @@ func PostLogin(ctx *gin.Context) {
 		ctx.JSON(200, resp)
 		return
 	}
-	ctx.JSON(200, resp)
+	ctx.JSON(200, rsp)
 }
 func PostAvatar(ctx *gin.Context) {
 	resp := make(map[string]interface{})
@@ -350,6 +351,37 @@ func PostAvatar(ctx *gin.Context) {
 	ctx.JSON(200, rsp)
 }
 
-func PutUserName(ctx *gin.Context){
-	
+func PutUserName(ctx *gin.Context) {
+
+	resp := make(map[string]interface{})
+	resp["errno"] = utils.RECODE_OK
+	resp["errmsg"] = utils.RecodeText(utils.RECODE_OK)
+
+	newName := ctx.Query("name")
+	s := sessions.Default(ctx)
+	usrid := s.Get("userName")
+	if usrid == nil {
+		resp["errno"] = utils.RECODE_SESSIONERR
+		resp["errmsg"] = utils.RecodeText(utils.RECODE_SESSIONERR)
+		ctx.JSON(200, resp)
+		return
+	}
+
+	reg := consul.NewRegistry()
+	ser := grpc.NewTransport()
+	microService := micro.NewService(
+		micro.Registry(reg),
+		micro.Transport(ser),
+	)
+	microService.Init()
+	client := PUTUSERNAMEPB.NewPutUserNameService("go.micro.srv.PutUserName", microService.Client())
+	rsp, err := client.Call(context.Background(), &PUTUSERNAMEPB.CallRequest{Userid: usrid.(string), Username: newName})
+
+	if err != nil {
+		rsp.Errno = utils.RECODE_DATAERR
+		rsp.Errmsg = utils.RecodeText(utils.RECODE_DATAERR)
+		ctx.JSON(200, rsp)
+		return
+	}
+	ctx.JSON(200, rsp)
 }
